@@ -33,10 +33,8 @@ class AdminPanelProvider extends PanelProvider
                 Dashboard::class,
             ])
             ->widgets([
-                \Filament\Widgets\AccountWidget::class,
+                // \Filament\Widgets\AccountWidget::class,
             ])
-            ->viteTheme('resources/css/app.css')
-            ->sidebarCollapsibleOnDesktop()
             ->profile()
             ->middleware([
                 \Illuminate\Cookie\Middleware\EncryptCookies::class,
