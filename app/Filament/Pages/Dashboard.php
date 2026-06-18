@@ -34,6 +34,7 @@ class Dashboard extends BaseDashboard
     public function getHeaderWidgets(): array
     {
         return [
+            \App\Filament\Widgets\QuickActionsWidget::class,
             \App\Filament\Widgets\DashboardStatsWidget::class,
             \App\Filament\Widgets\AdminOverviewWidget::class,
             \App\Filament\Widgets\OmsetLabaChart::class,

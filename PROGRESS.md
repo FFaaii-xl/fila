@@ -33,11 +33,11 @@ Citroroso v3 adalah project manajemen pasar dengan Laravel 13 + Filament 5.6.7. 
 | `PedagangResource` | Data Master | CRUD Pedagang |
 | `ProdusenResource` | Data Master | CRUD Produsen |
 | `ProdukResource` | Data Master | CRUD Produk |
-| `PenjualanResource` | Operasional | Draft Penjualan (TBA: Tabs Status) |
-| `DetailKasResource` | Operasional | Kas Harian & Operasional |
-| `PembulatanResource` | Sistem | Pengaturan Remnant / Pembulatan |
-| `LogProdukResource` | Sistem | Histori Log Produk (Read Only) |
-| `AccountResource` | Sistem | Manajemen Akun & Virtual Role |
+| `PenjualanResource` | Operasional | CRUD Penjualan |
+| `DetailKasResource` | Operasional | Kas Harian |
+| `PembulatanResource` | Sistem | Pengaturan Pembulatan |
+| `AccountResource` | Sistem | Manajemen Akun |
+| `UserResource` | Sistem | Manajemen User |
 
 ### 4. Custom Pages (app/Filament/Pages/)
 | Page | Fungsi |
@@ -47,7 +47,7 @@ Citroroso v3 adalah project manajemen pasar dengan Laravel 13 + Filament 5.6.7. 
 | `MutasiHarianPage` | Mutasi transaksi harian |
 | `CatatanSetoranPage` | Catatan setoran bulanan |
 | `Dashboard.php` | Dashboard utama (role-based) |
-| `Login.php` | Custom login (username + password) |
+| `Login.php` | Custom login |
 
 ### 5. Multi-Panel Setup (app/Providers/Filament/)
 | Panel | Path | Color | Fungsi |
@@ -56,24 +56,56 @@ Citroroso v3 adalah project manajemen pasar dengan Laravel 13 + Filament 5.6.7. 
 | `PedagangPanelProvider` | `/pedagang` | Emerald | Panel Pedagang |
 | `ProdusenPanelProvider` | `/produsen` | Blue | Panel Produsen |
 
-### 6. Services & Traits
-| File | Fungsi |
-|------|--------|
+### 6. Services (app/Services/)
+| Service | Fungsi |
+|---------|--------|
 | `SettingsService.php` | Konfigurasi via JSON (KAS tiered) |
-| `MerchantFinancialRules.php` | PROUP calculation, KAS tiered |
-| `MerchantFinancialTraits.php` | Uppercase display attributes |
-| `helpers.php` | alignUang(), formatTanggal() |
+| `UserAutoCreationService.php` | Auto-create user untuk Pedagang/Produsen |
 
-### 7. Views (resources/views/filament/pages/)
-- `merchant-sales.blade.php` - Laporan penjualan pedagang
-- `producer-sales.blade.php` - Laporan penjualan produsen
-- `mutasi-harian.blade.php` - Mutasi harian
-- `catatan-setoran.blade.php` - Catatan setoran
+### 7. Traits (app/Traits/)
+| Trait | Fungsi |
+|-------|--------|
+| `MerchantFinancialRules.php` | PROUP, KAS, Tabungan calculations |
+| `UppercaseAttributes.php` | Uppercase display attributes |
 
-### 8. Authentication
-- **Table**: `users2`
-- **Login Field**: `name` (bukan email)
-- **Password**: Hash Bcrypt
+### 8. Observers (app/Observers/)
+| Observer | Fungsi |
+|----------|--------|
+| `OwnerObserver.php` | General owner operations |
+| `PedagangObserver.php` | Auto-create user saat Pedagang dibuat |
+| `ProdusenObserver.php` | Auto-create user saat Produsen dibuat |
+| `PenjualanObserver.php` | Transaction operations |
+
+### 9. User Auto-Creation System
+- Saat Pedagang/Produsen dibuat → auto create user di `users2`
+- Username: nama di-slug (contoh: `slamet_wais_khair`)
+- Email: `{username}@citro.fun`
+- Password: random 12 chars
+- Admin mendapat notification dengan password sementara
+
+### 10. User Management (UserResource)
+- CRUD user untuk Admin
+- Owner dropdown: `Nama (Pedagang)` / `Nama (Produsen)`
+- Reset Password action
+- Filter by Owner Type
+
+### 12. Custom Login Page (Citroroso Theme)
+- **View**: `resources/views/filament/auth/login.blade.php`
+- **Features**: Emerald gradient, dark mode, glass morphism, password toggle
+
+### 11. Mobile-First UI (Filament v5)
+- **Plugin**: `hammadzafar05/mobile-bottom-nav`
+- **Pedagang Panel**: Bottom Nav (Beranda, Penjualan, Mutasi, Akun)
+- **Produsen Panel**: Bottom Nav (Beranda, Produk, Riwayat, Akun)
+- **Design**: ADAPTIVE - compact & informative (HP + Desktop)
+- **Reference**: `.clinerules` for full UI/UX guidelines
+
+## 🔗 Reference Project
+- **Project Lama**: `D:\laragon\www\moons` (MoonShine v2)
+- **Project Baru**: `D:\laragon\www\fila` (Filament v3)
+
+## 📌 Current Phase
+**Admin Dashboard** - Fitting to match MoonShine v2 dashboard functionality at `D:\laragon\www\moons`
 
 ## 🚀 Cara Running
 
@@ -91,80 +123,24 @@ php artisan serve
 http://127.0.0.1:8000/admin
 ```
 
-## 📋 Fitur dari Moons (Selesai)
-- [x] DraftPenjualanResource (via PenjualanResource)
-- [x] MerchantSalesPage (PROUP + KAS + Tabungan)
-- [x] ProducerSalesPage
-- [x] MutasiHarianPage
-- [x] CatatanSetoranPage
-- [x] SettingsService
-- [x] MerchantFinancialRules Trait
-- [x] **Phase 1**: Master Data Resources (Produsen, Pedagang, Produk)
-- [x] **Phase 2**: Operational Resources & System (DetailKas, Pembulatan, Account, LogProduk)
-- [x] **Phase 3**: Core Dashboards & Overview Widgets
-- [x] **Phase 4**: High Priority Operations (UploadPenjualan, NotaPenjualan)
-- [x] **Phase 5**: Core Resources (Transaksi, Saldo)
-- [x] **Phase 6**: Medium Priority Reports & Tools (Financial, Settings, Tabungan, Legacy Converter)
+## 📋 TODO List - Selesai
 
-## 📋 TODO List
+### Authentication & User Management
+- [x] User Registration (Auto-create via Observer)
+- [x] Password Reset functionality
+- [x] UserResource (CRUD)
 
-### High Priority (Dashboards & Key Operations)
-- [x] Dashboards (AdminDashboard, MerchantDashboard, PedagangDashboard, PengurusDashboard, ProdusenDashboard)
-- [x] TransaksiResource (CRUD Transaksi - *from Models*)
-- [x] SaldoResource (Riwayat Saldo - *from Models*)
-- [x] UploadPenjualanPage.php
-- [x] NotaPenjualanPage.php
-- [x] CashPreparationPage.php
-- [x] MonitorKirimanPage.php
-- [x] StokRealTimePage.php
-
-### Medium Priority (Reports & Tools)
-- [x] FinancialReportPage.php
-- [x] LogSaldoPage.php
-- [x] SettingsPage.php
-- [x] TabunganAdminPage.php
-- [x] LegacyConverterPage.php
-- [x] ProfilePage.php
-- [x] ReportMultiDimensiPage.php
-- [x] Role-based access control (RBAC) refinements
-
-### Low Priority (AI & Utilities)
-- [x] AIChatbotPage.php (Skipped)
-- [x] AIDashboardPage.php (Skipped)
-- [x] AIMerchantSegmentationPage.php (Skipped)
-- [x] AINaturalLanguageQueryPage.php (Skipped)
-- [x] AIProductRecommendationPage.php (Skipped)
-- [x] AISalesForecastingPage.php (Skipped)
-- [x] AIStockRecommendationPage.php (Skipped)
-- [x] UniversalInsightPage.php (Skipped)
-- [x] DocumentationAssistantPage.php (Skipped)
-- [x] HealthCheckPage.php
-- [x] OnlineUsersPage.php
-
-### Backend Logic & System Services (Ported)
-- [x] **Traits**: `CitroNumeric.php`, `FinancialPeriodDetection.php`, `HasGlobalPagination.php`, `HasKineticToolbar.php`, `HasLastDeposit.php`, `HasNuclearPrefetch.php`, `HasPerformanceMetrics.php`, `UppercaseAttributes.php`
-- [x] **Services (Business Logic)**: `KasService.php`, `PembulatanService.php`, `RutinitasService.php`, `SaldoService.php`, `SalesService.php`, `SetoranService.php`, `SettlementService.php`, `CashPreparationService.php`, `FinancialReportService.php`
-- [x] **Services (System & Tools)**: `ActivityLogService.php`, `BackupService.php`, `BackupFooterService.php`, `LegacyFormatDetector.php`, `NotaBackupService.php`, `OnlineUsersService.php`, `TemplateVersionManager.php`
-- [x] **Observers**: `OwnerObserver.php`, `PenjualanObserver.php`
-- [x] **Controllers**: `PublicNotaController.php`, `SettingsController.php`
-- [x] **Middleware**: `LogUserActivity.php`, `RolePrefixMiddleware.php`
-- [x] **Helpers**: `GlobalHelper.php`, `NotaSummaryHelper.php`
-- [x] **Exports (Excel)**: `FinancialReportExport.php`, `ModelExport.php`, `PenjualanSnapshotExport.php`, `PenjualanTemplateExport.php`
-- [x] **Imports (Excel)**: `PedagangImport.php`, `PenjualanImport.php`, `ProdukImport.php`, `ProdusenImport.php`
-
-*(Note: MoonShineServiceProvider is obsolete in Filament. SettingsService and MerchantFinancialRules have already been ported.)*
-
-*(Note: The Moonshine Resource Pages under Pedagang/, Produk/, and Produsen/ have been fully replaced by Filament Resources)*
-
-## 🔗 Reference Project
-- **Project Lama**: `D:\laragon\www\moons` (MoonShine)
-- **Project Baru**: `D:\laragon\www\fila` (Filament)
+### Phase 1-6 Complete
+- [x] Master Data Resources
+- [x] Operational Resources
+- [x] Core Dashboards
+- [x] Reports & Tools
 
 ## 📊 Database Schema
 Menggunakan database existing - **ZERO MIGRATION** policy.
 
 ```
-users2 (id, name, username, password, owner_type, owner_id)
+users2 (id, name, username, email, password, owner_type, owner_id)
 pedagang (id, nama, gender, tabungan_rate, tabungan)
 produsen (id, nama, gender, bundle_ke, tabungan_rate, tabungan)
 produk (id, nama, harga_beli, harga_jual, stok, produsen_id)
@@ -177,7 +153,6 @@ account (id, nama, jenis, saldo)
 
 ## 🎨 Design Theme
 - **Primary Color**: Emerald (#10b981)
-- **Admin Theme**: Dark glass morphism
 - **Typography**: Sans-serif (Tailwind default)
 
 ## 📞 Support

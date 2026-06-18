@@ -6,6 +6,8 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\Login;
+use Hammadzafar05\MobileBottomNav\MobileBottomNav;
+use Hammadzafar05\MobileBottomNav\MobileBottomNavItem;
 
 class ProdusenPanelProvider extends PanelProvider
 {
@@ -14,6 +16,7 @@ class ProdusenPanelProvider extends PanelProvider
         return $panel
             ->id('produsen')
             ->path('produsen')
+            ->login(Login::class)
             ->colors([
                 'primary' => '#3b82f6',
             ])
@@ -22,6 +25,31 @@ class ProdusenPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
+            ->plugin(
+                MobileBottomNav::make()
+                    ->items([
+                        MobileBottomNavItem::make('Beranda')
+                            ->label('Beranda')
+                            ->url(fn () => '/produsen')
+                            ->icon('heroicon-o-home')
+                            ->sort(1),
+                        MobileBottomNavItem::make('Produk')
+                            ->label('Produk')
+                            ->url(fn () => '/produsen/produk')
+                            ->icon('heroicon-o-archive-box')
+                            ->sort(2),
+                        MobileBottomNavItem::make('Riwayat')
+                            ->label('Riwayat')
+                            ->url(fn () => '/produsen/riwayat')
+                            ->icon('heroicon-o-clock')
+                            ->sort(3),
+                        MobileBottomNavItem::make('Akun')
+                            ->label('Akun')
+                            ->url(fn () => '/produsen/profile')
+                            ->icon('heroicon-o-user-circle')
+                            ->sort(4),
+                    ])
+            )
             ->middleware([
                 \Illuminate\Cookie\Middleware\EncryptCookies::class,
                 \Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse::class,

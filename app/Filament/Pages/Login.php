@@ -3,6 +3,7 @@
 namespace App\Filament\Pages;
 
 use Filament\Auth\Pages\Login as BaseLogin;
+use Illuminate\Support\Str;
 
 class Login extends BaseLogin
 {
@@ -27,5 +28,10 @@ class Login extends BaseLogin
                 $this->getRememberFormComponent(),
             ])
             ->statePath('data');
+    }
+
+    public function getView(): string
+    {
+        return 'filament.auth.login';
     }
 }

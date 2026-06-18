@@ -6,6 +6,8 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\Login;
+use Hammadzafar05\MobileBottomNav\MobileBottomNav;
+use Hammadzafar05\MobileBottomNav\MobileBottomNavItem;
 
 class PedagangPanelProvider extends PanelProvider
 {
@@ -23,6 +25,31 @@ class PedagangPanelProvider extends PanelProvider
             ->pages([
                 Dashboard::class,
             ])
+            ->plugin(
+                MobileBottomNav::make()
+                    ->items([
+                        MobileBottomNavItem::make('Beranda')
+                            ->label('Beranda')
+                            ->url(fn () => '/pedagang')
+                            ->icon('heroicon-o-home')
+                            ->sort(1),
+                        MobileBottomNavItem::make('Penjualan')
+                            ->label('Penjualan')
+                            ->url(fn () => '/pedagang/penjualan')
+                            ->icon('heroicon-o-shopping-bag')
+                            ->sort(2),
+                        MobileBottomNavItem::make('Mutasi')
+                            ->label('Mutasi')
+                            ->url(fn () => '/pedagang/mutasi')
+                            ->icon('heroicon-o-list-bullet')
+                            ->sort(3),
+                        MobileBottomNavItem::make('Akun')
+                            ->label('Akun')
+                            ->url(fn () => '/pedagang/profile')
+                            ->icon('heroicon-o-user-circle')
+                            ->sort(4),
+                    ])
+            )
             ->middleware([
                 \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
                 \Illuminate\Cookie\Middleware\EncryptCookies::class,

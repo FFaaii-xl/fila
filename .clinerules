@@ -1,0 +1,67 @@
+# Citroroso Project Rules
+
+## Database Rules
+- **ZERO MIGRATION POLICY**: Project ini menggunakan database existing `u674851158_tenongan_prod`. JANGAN membuat atau menjalankan migration tanpa instruksi eksplisit dari user.
+- **ZERO SEEDER POLICY**: JANGAN membuat atau menjalankan seeder tanpa instruksi eksplisit dari user.
+- Modifikasi schema database HARUS dilakukan langsung di database hosting, bukan via Laravel migration.
+
+## General Rules
+- Selalu check database connection dan existing schema sebelum membuat model atau resource baru.
+- Ikuti konvensi penamaan yang sudah ada di project.
+- Use existing table names dan column names dari database.
+
+## UI/UX Design Rules - Mobile-First Priority (Filament v5)
+
+### Target Platform
+- **Admin Panel**: Desktop-only (Full access, sidebar navigation, data-tables, no mobile optimization needed).
+- **Pengurus Panel**: **ADAPTIVE** (Responsif HP & Desktop, tapi UI tetap compact & informative).
+- **Pedagang & Produsen Panel**: **ADAPTIVE** (UI tetap compact & informative walau dibuka dari Desktop).
+
+### Design Principles
+1. **Compact Layout & Bottom Sheets**: Kurangi scroll vertikal ekstrem. Gunakan *Bottom Sheets* (Offcanvas) atau *Modal* untuk *form* input dan menu *filter*, alih-alih membuka halaman baru yang panjang.
+2. **Horizontal Swipeable Cards**: Gunakan `flex overflow-x-auto snap-x` untuk menjejerkan *stats cards* agar area utama tetap padat dan informatif.
+3. **Bottom Navigation**: Gunakan plugin `hammadzafar05/mobile-bottom-nav` untuk *fixed bottom bar*. Maksimal memuat 4 menu esensial (Ring 1) agar area sentuh tetap nyaman di HP.
+4. **Essential Stats Only**: Tampilkan hanya 3-4 metrik yang paling *actionable* (misal: Saldo Kas, Sales Hari Ini, dan Jumlah Tabungan Harian).
+5. **Card/List View over Tables**: Hindari tabel HTML konvensional untuk layar HP. Gunakan komponen `Split` dan `Stack` bawaan Filament agar data transaksi tampil seperti *List Tile* (daftar *chat*).
+6. **Tabs for Segmentation**: Gunakan komponen *Tabs* untuk memisahkan kategori data dalam satu halaman (misal: Tab Pedagang vs Tab Produsen) agar tidak perlu *scroll* jauh.
+7. **Large Touch Targets & Visual Cues**: Button minimal `44x44px`, input minimal `48px` height. Gunakan indikator warna yang tegas (Hijau untuk masuk/sukes, Merah untuk keluar/batal) untuk mempercepat pemindaian data (*Glanceability*).
+
+### Mobile Layout Specifications (Filament Panels)
+
+#### 1. Pedagang Panel (Fokus: Input & Pantau)
+- **Beranda (Home)**: *Horizontal Swipeable Stats* (Sales Hari Ini, Saldo Kas, Jumlah Tabungan Harian).
+- **Penjualan (Input)**: *Simple form* 1 kolom ke bawah untuk input penjualan harian.
+- **Mutasi**: *Card/List View* riwayat transaksi (masuk/keluar).
+- **Akun**: Rincian profil, saldo, tarik tunai, dan pengaturan.
+
+#### 2. Produsen Panel (Fokus: Pantau Titipan)
+- **Beranda (Home)**: *Horizontal Swipeable Stats* (Produk Laku, Total Titipan, Saldo).
+- **Produk**: Daftar produk milik sendiri (tampilan grid/kartu ringkas).
+- **Riwayat**: Laporan pergerakan barang laku/retur.
+- **Akun**: Rincian kas dan pengaturan.
+
+#### 3. Pengurus Panel (Fokus: View-Heavy & Monitoring)
+- **Beranda (Dashboard)**: Analitik angka (*glanceable stats*) dan grafik mini vertikal/horizontal.
+- **Penjualan**: Aliran arus transaksi *real-time* menggunakan layout *Card View*. Dilengkapi dengan **Sticky Filter Bar** (rentang tanggal) di bagian atas agar tidak hilang saat di-*scroll*.
+- **Mitra**: Direktori menggunakan **Tabs** (Tab Pedagang | Tab Produsen) untuk memantau performa masing-masing pengguna dengan cepat.
+- **Lainnya (Menu Ekstra)**: Tombol yang membuka halaman/Offcanvas berisi *grid menu* sekunder seperti Laporan Bulanan, Validasi, dan Pengaturan Web.
+
+### CSS & Layout Guidelines (Filament / Tailwind)
+
+```html
+<!-- Stats horizontal scroll -->
+<div class="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 scrollbar-hide">
+  <!-- Filament Stat Components -->
+</div>
+
+<!-- Bottom nav mobile -->
+<nav class="fixed bottom-0 left-0 right-0 h-16 bg-white dark:bg-slate-900 border-t...">
+
+<!-- Sticky Filter Bar -->
+<div class="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b...">
+```
+
+### Breakpoints
+- Mobile: `sm:` (default) - prioritas
+- Tablet: `md:` - optional enhancement
+- Desktop: `lg:` - admin only, no changes needed

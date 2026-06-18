@@ -1,13 +1,34 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Filament\Pages\Login;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 Route::get('/', function () {
     return view('welcome');
 });
 
-Route::get('/login', Login::class)->name('login');
+// Custom Login Page (standalone blade, not Livewire)
+Route::get('/login', function () {
+    return view('auth.login');
+})->name('login');
+
+// Custom Login Handler
+Route::post('/login', function (Request $request) {
+    $credentials = $request->validate([
+        'name' => ['required'],
+        'password' => ['required'],
+    ]);
+
+    if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        $request->session()->regenerate();
+        return redirect()->intended('/admin');
+    }
+
+    return back()->withErrors([
+        'login' => 'Username atau password yang diberikan tidak cocok dengan data kami.',
+    ]);
+})->name('login.post');
 
 // Admin / Operations Routes (Protected)
 Route::middleware(['web', 'auth'])->group(function () {
