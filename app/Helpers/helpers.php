@@ -106,3 +106,68 @@ if (!function_exists('abbreviateProductName')) {
         return implode(' ', $result);
     }
 }
+
+/**
+ * Helper sortableHeader untuk Filament Pages
+ */
+if (!function_exists('sortableHeader')) {
+    function sortableHeader(string $label, string $column): string
+    {
+        $currentSort = request()->get('sort', 'nama');
+        $direction = request()->get('direction', 'asc');
+        $isActive = $currentSort === $column;
+        $newDirection = $isActive ? ($direction === 'asc' ? 'desc' : 'asc') : 'asc';
+        $icon = $isActive ? ($direction === 'asc' ? '↑' : '↓') : '';
+
+        $url = url()->current() . '?' . http_build_query(array_merge(request()->query(), [
+            'sort' => $column,
+            'direction' => $newDirection,
+        ]));
+
+        return '<a href="' . e($url) . '" class="hover:underline">' . e($label) . ' ' . e($icon) . '</a>';
+    }
+}
+
+/**
+ * Helper getHeatmapColor untuk percentage heatmap
+ */
+if (!function_exists('getHeatmapColor')) {
+    function getHeatmapColor(float $percent): string
+    {
+        // HSL color: 0 = red (0°), 100 = green (120°)
+        // Convert percent to hue (0-120 range for red to green)
+        $hue = min(120, max(0, $percent * 1.2));
+        $saturation = 70;
+        $lightness = 45;
+
+        // Calculate RGB values for inline style
+        $h = $hue / 360;
+        $s = $saturation / 100;
+        $l = $lightness / 100;
+
+        if ($s == 0) {
+            $r = $g = $b = $l;
+        } else {
+            $hue2rgb = function ($p, $q, $t) use ($h) {
+                if ($t < 0) $t += 1;
+                if ($t > 1) $t -= 1;
+                if ($t < 1/6) return $p + ($q - $p) * 6 * $t;
+                if ($t < 1/2) return $q;
+                if ($t < 2/3) return $p + ($q - $p) * (2/3 - $t) * 6;
+                return $p;
+            };
+
+            $q = $l < 0.5 ? $l * (1 + $s) : $l + $s - $l * $s;
+            $p = 2 * $l - $q;
+            $r = $hue2rgb($p, $q, $h + 1/3);
+            $g = $hue2rgb($p, $q, $h);
+            $b = $hue2rgb($p, $q, $h - 1/3);
+        }
+
+        $r = round($r * 255);
+        $g = round($g * 255);
+        $b = round($b * 255);
+
+        return "rgb({$r}, {$g}, {$b})";
+    }
+}

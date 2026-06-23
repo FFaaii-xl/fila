@@ -15,7 +15,8 @@
         "hammadzafar05/mobile-bottom-nav": "^1.2",
         "laravel/framework": "^13.0",
         "laravel/tinker": "^3.0",
-        "leandrocfe/filament-apex-charts": "^5.1"
+        "leandrocfe/filament-apex-charts": "^5.1",
+        "maatwebsite/excel": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

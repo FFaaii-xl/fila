@@ -44,7 +44,7 @@ class SettingsPage extends Page
              $settings['special_merchant_list'] = implode(', ', $settings['special_merchant_list']);
         }
 
-        $this->form->fill($settings);
+        $this->form($form)->fill($settings);
     }
 
     public function form(Form $form): Form
@@ -174,7 +174,7 @@ class SettingsPage extends Page
     public function submit(): void
     {
         $settingsService = app(SettingsService::class);
-        $data = $this->form->getState();
+        $data = $this->form($form)->getState();
 
         if (isset($data['special_merchant_list']) && is_string($data['special_merchant_list'])) {
             $list = array_map('trim', explode(',', $data['special_merchant_list']));

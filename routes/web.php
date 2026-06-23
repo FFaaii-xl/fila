@@ -50,6 +50,7 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/admin/legacy/merge', [\App\Http\Controllers\LegacyConverterController::class, 'merge'])->name('admin.legacy.merge');
 
     // Tabungan Finalize
-    Route::post('/admin/tabungan/finalize', [\App\Http\Controllers\TabunganController::class, 'finalize'])->name('admin.tabungan.finalize');
-    Route::post('/admin/tabungan/preview-finalize', [\App\Http\Controllers\TabunganController::class, 'previewFinalize'])->name('admin.tabungan.preview-finalize');
+    Route::post('/admin/tabungan/finalize', [\App\Http\Controllers\Admin\TabunganController::class, 'finalize'])->name('admin.tabungan.finalize');
+    Route::post('/admin/tabungan/preview-finalize', [\App\Http\Controllers\Admin\TabunganController::class, 'previewFinalize'])->name('admin.tabungan.preview-finalize');
+    Route::get('/admin/tabungan/export', [\App\Http\Controllers\Admin\TabunganController::class, 'exportExcel'])->name('admin.tabungan.export');
 });

@@ -3,21 +3,88 @@
 namespace App\Filament\Pages;
 
 use App\Models\Pedagang;
+use App\Services\SetoranService;
+use Carbon\Carbon;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 
 class CatatanSetoranPage extends Page
 {
-    public string $selectedMonth = '';
-    public string $selectedPedagang = '';
-    public array $setoranList = [];
-    public array $totals = [];
+    public ?int $selectedYear = null;
+    public ?int $selectedMonth = null;
+    public ?int $selectedPedagangId = null;
+    
+    public array $grid = [];
+    public array $summary = [];
+    public int $daysInMonth = 0;
+    public string $monthLabel = '';
+    
+    public array $monthOptions = [];
+    public array $yearOptions = [];
+    public array $pedagangOptions = [];
 
     public function mount(): void
     {
-        $this->selectedMonth = date('Y-m');
-        $this->loadSetoran();
+        $user = Auth::user();
+        
+        // Check access: only Admin and Pengurus
+        if (!$user || !in_array($user->owner_type, ['Admin', 'Pengurus'])) {
+            return;
+        }
+
+        $tz = 'Asia/Jakarta';
+        $now = now($tz);
+        
+        $this->selectedYear = (int) request('year', $now->year);
+        $this->selectedMonth = (int) request('month', $now->month);
+        $this->selectedPedagangId = request('pedagang_id') ? (int) request('pedagang_id') : null;
+
+        $this->loadData();
+    }
+
+    protected function loadData(): void
+    {
+        $service = app(SetoranService::class);
+        
+        // Build month options
+        $this->monthOptions = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $this->monthOptions[$m] = Carbon::create(2024, $m, 1)->translatedFormat('F');
+        }
+
+        // Year range: current year - 2 to current year
+        $now = now('Asia/Jakarta');
+        $this->yearOptions = range($now->year - 2, $now->year);
+
+        // Pedagang list for filter
+        $this->pedagangOptions = Pedagang::query()
+            ->whereNull('deleted_at')
+            ->orderBy('nama')
+            ->pluck('nama', 'id')
+            ->toArray();
+
+        // Get grid data
+        $this->grid = $service->getMonthlyGrid(
+            $this->selectedYear,
+            $this->selectedMonth,
+            $this->selectedPedagangId
+        );
+
+        // Get summary
+        $this->summary = $service->getMonthlySummary(
+            $this->selectedYear,
+            $this->selectedMonth,
+            $this->selectedPedagangId
+        );
+
+        // Calculate days in month
+        $this->daysInMonth = Carbon::create($this->selectedYear, $this->selectedMonth, 1)->daysInMonth;
+        $this->monthLabel = Carbon::create($this->selectedYear, $this->selectedMonth, 1)->translatedFormat('F Y');
+    }
+
+    public function getHeading(): string
+    {
+        return 'Catatan Setoran';
     }
 
     public function getView(): string
@@ -25,76 +92,41 @@ class CatatanSetoranPage extends Page
         return 'filament.pages.catatan-setoran';
     }
 
-    public function loadSetoran(): void
+    public function getHeaderWidgets(): array
     {
-        $user = Auth::user();
-        $pedagangId = $this->selectedPedagang;
-
-        if ($user && $user->owner_type === 'Pedagang') {
-            $pedagangId = $user->owner_id;
-        }
-
-        $monthStart = $this->selectedMonth . '-01';
-        $monthEnd = date('Y-m-t', strtotime($monthStart));
-
-        $query = DB::table('penjualan as p')
-            ->join('pedagang as pdk', 'p.pedagang_id', '=', 'pdk.id')
-            ->join('produk as pr', 'p.produk_id', '=', 'pr.id')
-            ->whereBetween('p.tanggal', [$monthStart, $monthEnd])
-            ->whereNull('p.deleted_at')
-            ->where('p.status', 'Ok')
-            ->select([
-                'pdk.id as pedagang_id',
-                'pdk.nama as pedagang_nama',
-                DB::raw('DATE(p.tanggal) as tanggal'),
-                DB::raw('SUM(p.laku * p.harga_beli) as total_modal'),
-                DB::raw('SUM(p.laku * p.harga_jual) as total_omset'),
-                DB::raw('SUM(p.laku) as total_laku'),
-                DB::raw('AVG(pdk.tabungan_rate) as tabungan_rate'),
-            ])
-            ->groupBy('pdk.id', 'pdk.nama', DB::raw('DATE(p.tanggal)'));
-
-        if ($pedagangId) {
-            $query->where('p.pedagang_id', $pedagangId);
-        }
-
-        $results = $query->get();
-        $this->setoranList = [];
-
-        foreach ($results as $row) {
-            $modal = (float) $row->total_modal;
-            $kas = 1500;
-            $tabungan = (float) $row->tabungan_rate;
-            $setoran = $modal + $kas + $tabungan;
-
-            $this->setoranList[] = [
-                'pedagang' => $row->pedagang_nama,
-                'tanggal' => $row->tanggal,
-                'modal' => $modal,
-                'kas' => $kas,
-                'tabungan' => $tabungan,
-                'setoran' => $setoran,
-                'omset' => (float) $row->total_omset,
-                'laku' => $row->total_laku,
-            ];
-        }
-
-        $this->totals = [
-            'modal' => array_sum(array_column($this->setoranList, 'modal')),
-            'kas' => array_sum(array_column($this->setoranList, 'kas')),
-            'tabungan' => array_sum(array_column($this->setoranList, 'tabungan')),
-            'setoran' => array_sum(array_column($this->setoranList, 'setoran')),
-            'omset' => array_sum(array_column($this->setoranList, 'omset')),
-        ];
+        return [];
     }
 
-    public function updatedSelectedMonth(): void
+    public function filters(): array
     {
-        $this->loadSetoran();
+        return [];
     }
 
-    public function updatedSelectedPedagang(): void
+    /**
+     * Get status badge color class
+     */
+    public static function getStatusColor(string $status): string
     {
-        $this->loadSetoran();
+        return match ($status) {
+            'Ok' => 'bg-emerald-500 text-white',
+            'S' => 'bg-amber-500 text-white',
+            default => match (true) {
+                str_starts_with($status, 'T') => 'bg-red-500 text-white',
+                $status === 'BELUM' => 'bg-gray-400 text-white',
+                $status === 'X' => 'bg-slate-300 text-slate-600',
+                default => 'bg-gray-200 text-gray-700',
+            },
+        };
+    }
+
+    /**
+     * Get status label
+     */
+    public static function getStatusLabel(?string $status): string
+    {
+        if ($status === null) {
+            return 'X';
+        }
+        return $status;
     }
 }
