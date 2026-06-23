@@ -5,7 +5,6 @@ namespace App\Filament\Pages;
 use App\Traits\MerchantFinancialRules;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class MerchantSalesPage extends Page
@@ -53,7 +52,7 @@ class MerchantSalesPage extends Page
 
     public function getView(): string
     {
-        return 'admin.reports.merchant-sales';
+        return 'filament.pages.merchant-sales';
     }
 
     public function loadReportData(): void
@@ -92,14 +91,12 @@ class MerchantSalesPage extends Page
             $this->sort = 'bln';
         }
 
-        // Load pedagang list for Admin/Pengurus
-        $this->pedagangList = Cache::remember('pedagang_list_simple', 120, function () {
-            return DB::table('pedagang')
-                ->whereNull('deleted_at')
-                ->orderBy('nama')
-                ->get()
-                ->toArray();
-        });
+        // Load pedagang list for Admin/Pengurus - direct query without cache
+        $this->pedagangList = DB::table('pedagang')
+            ->whereNull('deleted_at')
+            ->orderBy('nama')
+            ->get()
+            ->toArray();
 
         // DATA AGGREGATION ENGINE
         $results = collect();

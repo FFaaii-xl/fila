@@ -4,7 +4,6 @@ namespace App\Filament\Pages;
 
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class ProducerSalesPage extends Page
@@ -48,7 +47,7 @@ class ProducerSalesPage extends Page
 
     public function getView(): string
     {
-        return 'admin.reports.producer-sales';
+        return 'filament.pages.producer-sales';
     }
 
     public function loadReportData(): void
@@ -78,15 +77,13 @@ class ProducerSalesPage extends Page
             }
         }
 
-        // Load produsen list
-        $this->produsenList = Cache::remember('produsen_list_simple_ps', 120, function () use ($user) {
-            return DB::table('produsen')
-                ->whereNull('deleted_at')
-                ->when($user && $user->owner_type === 'Produsen', fn ($q) => $q->where('id', $user->owner_id))
-                ->orderBy('nama')
-                ->get()
-                ->toArray();
-        });
+        // Load produsen list - direct query without cache
+        $this->produsenList = DB::table('produsen')
+            ->whereNull('deleted_at')
+            ->when($user && $user->owner_type === 'Produsen', fn ($q) => $q->where('id', $user->owner_id))
+            ->orderBy('nama')
+            ->get()
+            ->toArray();
 
         // DATA QUERIES
         $rawData = collect();
