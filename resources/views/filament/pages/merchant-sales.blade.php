@@ -1,270 +1,337 @@
-{{-- Merchant Sales Report Page for Filament v5 --}}
-<div>
-    {{-- Header with sticky filter bar --}}
-    <div class="sticky top-0 z-10 bg-white dark:bg-slate-900 border-b shadow-sm">
-    <div class="px-4 py-4">
-        <h1 class="fi-title text-2xl font-bold text-gray-900 dark:text-white">{{ $this->getHeading() }}</h1>
-        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            @if($mode === 'tanggal')
-                Tanggal: {{ \Carbon\Carbon::parse($selectedDate)->format('d F Y') }}
-            @elseif($mode === 'nama')
-                Periode: {{ \Carbon\Carbon::createFromFormat('m', $month)->format('F') }} {{ $year }}
-            @elseif($mode === 'tahunan')
-                Tahun: {{ $year }}
-            @else
-                Range: {{ \Carbon\Carbon::parse($dateStart)->format('d M') }} - {{ \Carbon\Carbon::parse($dateEnd)->format('d M Y') }}
-            @endif
-        </p>
-    </div>
+{{-- Merchant Sales Report - Native Filament Theme --}}
+<div x-data="merchantSales()" class="space-y-6">
     
-    {{-- Filter Controls --}}
-    <div class="px-4 pb-4">
-        {{-- Mode Tabs --}}
-        <div class="flex gap-2 mb-3 overflow-x-auto">
-            <button wire:click="$set('mode', 'tanggal')" 
-                class="px-3 py-1.5 text-sm rounded-lg whitespace-nowrap transition-colors
-                {{ $mode === 'tanggal' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                Harian
-            </button>
-            <button wire:click="$set('mode', 'nama')" 
-                class="px-3 py-1.5 text-sm rounded-lg whitespace-nowrap transition-colors
-                {{ $mode === 'nama' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                Bulanan
-            </button>
-            <button wire:click="$set('mode', 'tahunan')" 
-                class="px-3 py-1.5 text-sm rounded-lg whitespace-nowrap transition-colors
-                {{ $mode === 'tahunan' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                Tahunan
-            </button>
-            <button wire:click="$set('mode', 'range')" 
-                class="px-3 py-1.5 text-sm rounded-lg whitespace-nowrap transition-colors
-                {{ $mode === 'range' ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200' }}">
-                Range
-            </button>
+    {{-- Toolbar --}}
+    <x-filament::section>
+        <div class="flex flex-col gap-4">
+            {{-- Top Row: Search & Actions --}}
+            <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+                {{-- Search --}}
+                <div class="w-full sm:w-1/3">
+                    <x-filament::input.wrapper icon="heroicon-m-magnifying-glass">
+                        <x-filament::input 
+                            type="text" 
+                            x-model="searchQuery" 
+                            @input="filterTable()" 
+                            placeholder="Cari pedagang..." 
+                        />
+                    </x-filament::input.wrapper>
+                </div>
+                
+                {{-- Actions --}}
+                <div class="flex items-center gap-2 w-full sm:w-auto">
+                    <x-filament::button color="success" icon="heroicon-m-document-arrow-down" class="w-full sm:w-auto">
+                        Export Excel
+                    </x-filament::button>
+                    <x-filament::button color="gray" icon="heroicon-m-printer" onclick="window.print()" class="w-full sm:w-auto">
+                        Cetak
+                    </x-filament::button>
+                </div>
+            </div>
+
+            <hr class="border-t border-gray-200 dark:border-white/10 my-4" />
+
+            {{-- Bottom Row: Filters --}}
+            <div class="flex flex-col sm:flex-row items-center gap-4 flex-wrap">
+                
+                {{-- Mode Selector (Using button group style if possible, or just buttons) --}}
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-medium text-gray-500 dark:text-gray-400 mr-2">Mode:</span>
+                    <x-filament::button wire:click="$set('mode', 'tanggal')" size="sm" color="{{ $mode === 'tanggal' ? 'primary' : 'gray' }}">
+                        Harian
+                    </x-filament::button>
+                    <x-filament::button wire:click="$set('mode', 'nama')" size="sm" color="{{ $mode === 'nama' ? 'primary' : 'gray' }}">
+                        Bulanan
+                    </x-filament::button>
+                    <x-filament::button wire:click="$set('mode', 'tahunan')" size="sm" color="{{ $mode === 'tahunan' ? 'primary' : 'gray' }}">
+                        Tahunan
+                    </x-filament::button>
+                    <x-filament::button wire:click="$set('mode', 'range')" size="sm" color="{{ $mode === 'range' ? 'primary' : 'gray' }}">
+                        Range
+                    </x-filament::button>
+                </div>
+
+                {{-- Date/Range Inputs --}}
+                <div class="flex items-center gap-2">
+                    @if($mode === 'tanggal')
+                        <x-filament::input.wrapper>
+                            <x-filament::input type="date" wire:model.live="selectedDate" />
+                        </x-filament::input.wrapper>
+                    @elseif($mode === 'range')
+                        <x-filament::input.wrapper>
+                            <x-filament::input type="date" wire:model.live="dateStart" />
+                        </x-filament::input.wrapper>
+                        <span class="text-gray-400">-</span>
+                        <x-filament::input.wrapper>
+                            <x-filament::input type="date" wire:model.live="dateEnd" />
+                        </x-filament::input.wrapper>
+                    @endif
+                </div>
+
+                {{-- Month/Year Selector --}}
+                @if($mode === 'nama' || $mode === 'tahunan')
+                <div class="flex items-center gap-2">
+                    @if($mode === 'nama')
+                        <x-filament::input.wrapper>
+                            <x-filament::input.select wire:model.live="month">
+                                @foreach(range(1, 12) as $m)
+                                    <option value="{{ str_pad($m, 2, '0', STR_PAD_LEFT) }}">
+                                        {{ \Carbon\Carbon::create(2024, $m, 1)->format('M') }}
+                                    </option>
+                                @endforeach
+                            </x-filament::input.select>
+                        </x-filament::input.wrapper>
+                    @endif
+                    <x-filament::input.wrapper>
+                        <x-filament::input.select wire:model.live="year">
+                            @foreach(range(now()->year - 2, now()->year) as $y)
+                                <option value="{{ $y }}">{{ $y }}</option>
+                            @endforeach
+                        </x-filament::input.select>
+                    </x-filament::input.wrapper>
+                </div>
+                @endif
+
+                {{-- Pedagang Filter --}}
+                @if(!$isPedagangUser && count($pedagangList) > 0)
+                <div class="flex items-center gap-2">
+                    <x-filament::input.wrapper>
+                        <x-filament::input.select wire:model.live="pedagangId">
+                            <option value="">Semua Pedagang</option>
+                            @foreach($pedagangList as $pdk)
+                                <option value="{{ $pdk->id }}">{{ $pdk->nama }}</option>
+                            @endforeach
+                        </x-filament::input.select>
+                    </x-filament::input.wrapper>
+                </div>
+                @endif
+
+            </div>
         </div>
+    </x-filament::section>
+
+    {{-- Summary Widget --}}
+    @php 
+        $globalPerc = ($totals['titip'] ?? 0) > 0 ? round((($totals['laku'] ?? 0) / ($totals['titip'] ?? 1)) * 100, 1) : 0;
+    @endphp
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <x-filament::section class="!p-3 text-center">
+            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Pedagang</p>
+            <p class="text-2xl font-bold mt-1 text-primary-600">{{ count($reportData) }}</p>
+        </x-filament::section>
         
-        {{-- Date Inputs based on mode --}}
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            @if($mode === 'tanggal')
-                <div class="col-span-2 md:col-span-1">
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Pilih Tanggal</label>
-                    <input type="date" wire:model.live="selectedDate" 
-                        class="w-full px-3 py-2 text-sm border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500">
+        <x-filament::section class="!p-3 text-center">
+            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Titipan</p>
+            <p class="text-2xl font-bold mt-1">{{ number_format($totals['titip'] ?? 0) }}</p>
+        </x-filament::section>
+
+        <x-filament::section class="!p-3 text-center">
+            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Terjual</p>
+            <p class="text-2xl font-bold mt-1 text-success-600">{{ number_format($totals['laku'] ?? 0) }}</p>
+        </x-filament::section>
+
+        <x-filament::section class="!p-3 text-center relative overflow-hidden">
+            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Efisiensi</p>
+            <p class="text-2xl font-bold mt-1" style="color: hsl({{ min($globalPerc * 1.4, 120) }}, 80%, 45%);">{{ $globalPerc }}%</p>
+            <div class="absolute bottom-0 left-0 h-1 bg-gray-200 w-full dark:bg-gray-700">
+                <div class="h-full" style="width: {{ min($globalPerc, 100) }}%; background-color: hsl({{ min($globalPerc * 1.4, 120) }}, 80%, 45%);"></div>
+            </div>
+        </x-filament::section>
+
+        <x-filament::section class="!p-3 text-center">
+            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Setoran</p>
+            <p class="text-xl font-bold mt-1 text-primary-600">Rp {{ number_format($totals['setoran'] ?? 0, 0, ',', '.') }}</p>
+        </x-filament::section>
+
+        <x-filament::section class="!p-3 text-center">
+            <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Laba</p>
+            <p class="text-xl font-bold mt-1 text-success-600">Rp {{ number_format($totals['laba'] ?? 0, 0, ',', '.') }}</p>
+        </x-filament::section>
+    </div>
+
+    {{-- Alert: Belum Lapor --}}
+    @if($notReported && count($notReported) > 0)
+    <div class="p-3 rounded-xl border border-warning-200 bg-warning-50 dark:bg-warning-500/10 dark:border-warning-500/20">
+        <div class="flex items-start gap-3">
+            <x-filament::icon icon="heroicon-m-exclamation-triangle" class="h-6 w-6 text-warning-500" />
+            <div class="flex-1">
+                <h3 class="text-xs font-bold text-warning-600 dark:text-warning-400">Belum Laporan:</h3>
+                <div class="mt-2 flex flex-wrap gap-2">
+                    @foreach($notReported as $nama)
+                        <span class="inline-flex items-center px-2 py-1 rounded-md bg-warning-100 text-warning-700 text-xs font-medium dark:bg-warning-500/20 dark:text-warning-400">
+                            {{ $nama }}
+                        </span>
+                    @endforeach
                 </div>
-            @elseif($mode === 'nama')
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Bulan</label>
-                    <select wire:model.live="month" class="w-full px-3 py-2 text-sm border-gray-300 rounded-lg">
-                        @foreach(range(1, 12) as $m)
-                            <option value="{{ str_pad($m, 2, '0', STR_PAD_LEFT) }}">
-                                {{ \Carbon\Carbon::create(2024, $m, 1)->translatedFormat('F') }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Tahun</label>
-                    <select wire:model.live="year" class="w-full px-3 py-2 text-sm border-gray-300 rounded-lg">
-                        @foreach(range(now()->year - 2, now()->year) as $y)
-                            <option value="{{ $y }}">{{ $y }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            @elseif($mode === 'tahunan')
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Tahun</label>
-                    <select wire:model.live="year" class="w-full px-3 py-2 text-sm border-gray-300 rounded-lg">
-                        @foreach(range(now()->year - 5, now()->year) as $y)
-                            <option value="{{ $y }}">{{ $y }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            @else
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Tanggal Mulai</label>
-                    <input type="date" wire:model.live="dateStart" 
-                        class="w-full px-3 py-2 text-sm border-gray-300 rounded-lg">
-                </div>
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Tanggal Selesai</label>
-                    <input type="date" wire:model.live="dateEnd" 
-                        class="w-full px-3 py-2 text-sm border-gray-300 rounded-lg">
-                </div>
-            @endif
-            
-            {{-- Pedagang Filter (Admin/Pengurus only) --}}
-            @if(!$isPedagangUser && count($pedagangList) > 0)
-                <div class="col-span-2 md:col-span-2">
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Filter Pedagang</label>
-                    <select wire:model.live="pedagangId" class="w-full px-3 py-2 text-sm border-gray-300 rounded-lg">
-                        <option value="">Semua Pedagang</option>
-                        @foreach($pedagangList as $pdk)
-                            <option value="{{ $pdk->id }}">{{ $pdk->nama }}</option>
-                        @endforeach
-                    </select>
-                </div>
-            @endif
+            </div>
         </div>
     </div>
-</div>
+    @endif
 
-{{-- Summary Cards --}}
-<div class="p-4">
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3">
-            <p class="text-xs text-blue-600 dark:text-blue-400 font-medium">Titip</p>
-            <p class="text-lg font-bold text-blue-900 dark:text-blue-300">{{ number_format($totals['titip'] ?? 0) }}</p>
-        </div>
-        <div class="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-3">
-            <p class="text-xs text-emerald-600 dark:text-emerald-400 font-medium">Laku</p>
-            <p class="text-lg font-bold text-emerald-900 dark:text-emerald-300">{{ number_format($totals['laku'] ?? 0) }}</p>
-        </div>
-        <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-3">
-            <p class="text-xs text-purple-600 dark:text-purple-400 font-medium">Modal</p>
-            <p class="text-lg font-bold text-purple-900 dark:text-purple-300">Rp {{ number_format($totals['modal'] ?? 0, 0, ',', '.') }}</p>
-        </div>
-        <div class="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
-            <p class="text-xs text-amber-600 dark:text-amber-400 font-medium">KAS</p>
-            <p class="text-lg font-bold text-amber-900 dark:text-amber-300">Rp {{ number_format($totals['kas'] ?? 0, 0, ',', '.') }}</p>
-        </div>
-        <div class="bg-teal-50 dark:bg-teal-900/20 rounded-lg p-3">
-            <p class="text-xs text-teal-600 dark:text-teal-400 font-medium">Setoran</p>
-            <p class="text-lg font-bold text-teal-900 dark:text-teal-300">Rp {{ number_format($totals['setoran'] ?? 0, 0, ',', '.') }}</p>
-        </div>
-        <div class="bg-rose-50 dark:bg-rose-900/20 rounded-lg p-3">
-            <p class="text-xs text-rose-600 dark:text-rose-400 font-medium">Laba</p>
-            <p class="text-lg font-bold text-rose-900 dark:text-rose-300">Rp {{ number_format($totals['laba'] ?? 0, 0, ',', '.') }}</p>
-        </div>
-    </div>
-</div>
-
-{{-- Not Reported Warning --}}
-@if($notReported && count($notReported) > 0)
-    <div class="mx-4 mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg">
-        <p class="font-medium text-amber-800 dark:text-amber-200 mb-2">
-            ⚠️ Pedagang belum melapor ({{ count($notReported) }})
-        </p>
-        <div class="flex flex-wrap gap-2">
-            @foreach($notReported as $nama)
-                <span class="px-2 py-1 text-xs bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300 rounded">
-                    {{ $nama }}
-                </span>
-            @endforeach
-        </div>
-    </div>
-@endif
-
-{{-- Data Table --}}
-<div class="px-4 pb-6">
-    @if(count($reportData) > 0)
-        <div class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-slate-900">
-            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                <thead class="bg-gray-50 dark:bg-slate-800">
-                    <tr>
-                        @if($mode === 'tanggal' && !$isPedagangProductMode)
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
-                                wire:click="sortBy('nama')">
-                                Pedagang {!! $sort === 'nama' ? ($direction === 'asc' ? '↑' : '↓') : '' !!}
-                            </th>
-                        @elseif($mode === 'nama')
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                        @elseif($mode === 'tahunan')
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bulan</th>
-                        @else
-                            <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                @if($rangeType === 'tahun') Tahun @elseif($rangeType === 'bulan') Bulan @else Tanggal @endif
-                            </th>
+    {{-- Data Table --}}
+    <x-filament::section>
+        @if(count($reportData) > 0)
+        <div class="overflow-x-auto">
+            <table class="w-full text-left divide-y divide-gray-200 dark:divide-white/5" id="reportTable">
+                <thead>
+                    <tr class="bg-gray-50 dark:bg-white/5">
+                        <th class="px-2 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">No</th>
+                        <th class="px-2 py-1.5 text-xs font-medium text-gray-500 dark:text-gray-400">
+                            @php
+                                $headerTitle = (isset($isPedagangProductMode) && $isPedagangProductMode) ? 'Produk' : ($mode === 'nama' ? 'Waktu' : ($mode === 'tahunan' ? 'Bulan' : 'Pedagang'));
+                            @endphp
+                            <a href="#" wire:click.prevent="sortBy('{{ in_array($mode, ['tanggal']) ? 'nama' : ($mode === 'nama' ? 'tgl' : 'bln') }}')" class="hover:text-primary-600">{{ $headerTitle }}</a>
+                        </th>
+                        <th class="px-2 py-1.5 text-center text-xs font-medium text-gray-500 dark:text-gray-400"><a href="#" wire:click.prevent="sortBy('total_produk')" class="hover:text-primary-600">Prod</a></th>
+                        <th class="px-2 py-1.5 text-center text-xs font-medium text-gray-500 dark:text-gray-400"><a href="#" wire:click.prevent="sortBy('total_titip')" class="hover:text-primary-600">Titip</a></th>
+                        <th class="px-2 py-1.5 text-center text-xs font-medium text-gray-500 dark:text-gray-400"><a href="#" wire:click.prevent="sortBy('total_laku')" class="hover:text-primary-600">Laku</a></th>
+                        <th class="px-2 py-1.5 text-center text-xs font-medium text-gray-500 dark:text-gray-400"><a href="#" wire:click.prevent="sortBy('persen_laku')" class="hover:text-primary-600">%</a></th>
+                        <th class="px-2 py-1.5 text-right text-xs font-medium text-gray-500 dark:text-gray-400 hidden md:table-cell"><a href="#" wire:click.prevent="sortBy('total_modal_final')" class="hover:text-primary-600">Modal</a></th>
+                        <th class="px-2 py-1.5 text-right text-xs font-medium text-gray-500 dark:text-gray-400 hidden lg:table-cell"><a href="#" wire:click.prevent="sortBy('total_kas')" class="hover:text-primary-600">Kas</a></th>
+                        <th class="px-2 py-1.5 text-right text-xs font-medium text-gray-500 dark:text-gray-400 hidden lg:table-cell"><a href="#" wire:click.prevent="sortBy('total_tab_final')" class="hover:text-primary-600">Tab</a></th>
+                        <th class="px-2 py-1.5 text-right text-xs font-bold text-primary-600 dark:text-primary-400"><a href="#" wire:click.prevent="sortBy('total_setoran')" class="hover:text-primary-600">Setoran</a></th>
+                        <th class="px-2 py-1.5 text-right text-xs font-medium text-gray-500 dark:text-gray-400 hidden md:table-cell"><a href="#" wire:click.prevent="sortBy('total_omset')" class="hover:text-primary-600">Omset</a></th>
+                        <th class="px-2 py-1.5 text-right text-xs font-bold text-gray-500 dark:text-gray-400"><a href="#" wire:click.prevent="sortBy('total_laba')" class="hover:text-primary-600">Laba</a></th>
+                        @if($mode === 'tahunan' || $mode === 'nama')
+                        <th class="px-2 py-1.5 text-center text-xs font-medium text-gray-500 dark:text-gray-400">Aksi</th>
                         @endif
-                        <th class="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Produk</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Titip</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Laku</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Modal</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">KAS</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden lg:table-cell">Tab</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Setoran</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Omset</th>
-                        <th class="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Laba</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody class="divide-y divide-gray-200 dark:divide-white/5">
+                    @php 
+                        $no = 1; 
+                        $currentGroup = null;
+                    @endphp
                     @foreach($reportData as $row)
-                        <tr class="hover:bg-gray-50 dark:hover:bg-slate-800/50 transition-colors">
-                            @if($mode === 'tanggal' && !$isPedagangProductMode)
-                                <td class="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
-                                    {{ $row->nama ?? '-' }}
-                                </td>
-                            @elseif($mode === 'nama')
-                                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                                    {{ \Carbon\Carbon::parse($row->tgl)->format('d M') }}
-                                </td>
-                            @elseif($mode === 'tahunan')
-                                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                                    {{ \Carbon\Carbon::createFromFormat('m', $row->bln)->format('F') }}
-                                </td>
+                    @php
+                        $groupName = null;
+                        if ($mode === 'tahunan' && isset($row->bln)) {
+                            $groupName = \Carbon\Carbon::createFromFormat('m', $row->bln)->format('F');
+                        } elseif ($mode === 'nama' && isset($row->tgl)) {
+                            $groupName = \Carbon\Carbon::parse($row->tgl)->format('M Y');
+                        } elseif ($mode === 'range' && $rangeType === 'bulan' && isset($row->thn)) {
+                            $groupName = \Carbon\Carbon::createFromDate($row->thn, $row->bln ?? 1, 1)->format('Y');
+                        }
+
+                        if ($groupName && $groupName !== $currentGroup) {
+                            $currentGroup = $groupName;
+                            echo '<tr class="bg-gray-100 dark:bg-white/5"><td colspan="13" class="px-4 py-2 font-bold text-xs text-primary-600 dark:text-primary-400 uppercase tracking-wider">' . $currentGroup . '</td></tr>';
+                            $no = 1; // reset number per group
+                        }
+                    @endphp
+                    <tr class="report-row hover:bg-gray-50 dark:hover:bg-white/5 transition-colors" data-name="{{ strtolower($row->nama ?? '') }}">
+                        <td class="px-2 py-1.5 text-xs text-gray-500 dark:text-gray-400 text-center">{{ $no++ }}</td>
+                        <td class="px-2 py-1.5 text-xs font-medium text-gray-900 dark:text-white whitespace-nowrap row-name" style="max-width: 150px; overflow: hidden; text-overflow: ellipsis;">
+                            @if(in_array($mode, ['tanggal'])) 
+                                {{ $row->nama ?? '-' }} 
+                            @elseif($mode === 'nama') 
+                                {{ \Carbon\Carbon::parse($row->tgl)->format('d M Y') }} 
+                            @elseif($mode === 'tahunan') 
+                                {{ \Carbon\Carbon::createFromFormat('m', $row->bln)->format('F') }} 
                             @else
-                                <td class="px-3 py-2 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                                    @if($rangeType === 'tahun')
-                                        {{ $row->thn }}
-                                    @elseif($rangeType === 'bulan')
-                                        {{ \Carbon\Carbon::createFromFormat('m', $row->bln)->format('M Y') }}
-                                    @else
-                                        {{ \Carbon\Carbon::parse($row->tgl)->format('d M') }}
-                                    @endif
-                                </td>
+                                @if($rangeType === 'hari')
+                                    {{ \Carbon\Carbon::parse($row->tgl ?? $row->thn)->format('d M Y') }}
+                                @elseif($rangeType === 'bulan')
+                                    {{ \Carbon\Carbon::createFromDate($row->thn ?? date('Y'), $row->bln ?? 1, 1)->format('F Y') }}
+                                @else
+                                    {{ $row->thn ?? '-' }}
+                                @endif
                             @endif
-                            <td class="px-3 py-2 whitespace-nowrap text-sm text-center text-gray-600 dark:text-gray-300">
-                                {{ $row->total_produk ?? 0 }}
-                            </td>
-                            <td class="px-3 py-2 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-300">
-                                {{ $row->total_titip ?? 0 }}
-                            </td>
-                            <td class="px-3 py-2 whitespace-nowrap text-sm text-right text-emerald-600 dark:text-emerald-400 font-medium">
-                                {{ $row->total_laku ?? 0 }}
-                            </td>
-                            <td class="px-3 py-2 whitespace-nowrap text-sm text-right text-gray-600 dark:text-gray-300 hidden md:table-cell">
-                                Rp {{ number_format($row->total_modal_final ?? 0, 0, ',', '.') }}
-                            </td>
-                            <td class="px-3 py-2 whitespace-nowrap text-sm text-right text-amber-600 dark:text-amber-400 hidden lg:table-cell">
-                                Rp {{ number_format($row->total_kas ?? 0, 0, ',', '.') }}
-                            </td>
-                            <td class="px-3 py-2 whitespace-nowrap text-sm text-right text-teal-600 dark:text-teal-400 hidden lg:table-cell">
-                                Rp {{ number_format($row->total_tab_final ?? 0, 0, ',', '.') }}
-                            </td>
-                            <td class="px-3 py-2 whitespace-nowrap text-sm text-right font-medium text-gray-900 dark:text-white">
-                                Rp {{ number_format($row->total_setoran ?? 0, 0, ',', '.') }}
-                            </td>
-                            <td class="px-3 py-2 whitespace-nowrap text-sm text-right text-blue-600 dark:text-blue-400 hidden md:table-cell">
-                                Rp {{ number_format($row->total_omset ?? 0, 0, ',', '.') }}
-                            </td>
-                            <td class="px-3 py-2 whitespace-nowrap text-sm text-right font-semibold {{ ($row->total_laba ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
-                                Rp {{ number_format($row->total_laba ?? 0, 0, ',', '.') }}
-                            </td>
-                        </tr>
+                        </td>
+                        <td class="px-2 py-1.5 text-xs text-gray-500 dark:text-gray-400 text-center">
+                            {{ (isset($isPedagangProductMode) && $isPedagangProductMode) ? '-' : ($row->total_produk ?? 0) }}
+                        </td>
+                        <td class="px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 text-center">{{ number_format($row->total_titip ?? 0, 0, ',', '.') }}</td>
+                        <td class="px-2 py-1.5 text-xs text-success-600 font-medium text-center">{{ number_format($row->total_laku ?? 0, 0, ',', '.') }}</td>
+                        @php 
+                            $percent = $row->total_titip > 0 ? round(($row->total_laku / $row->total_titip) * 100, 1) : 0;
+                            $hue = min($percent * 1.4, 120);
+                        @endphp
+                        <td class="px-2 py-1.5 text-xs font-bold text-center" style="color: hsl({{ $hue }}, 80%, 45%); background: hsla({{ $hue }}, 80%, 45%, 0.1);">
+                            {{ $percent }}%
+                        </td>
+                        <td class="px-2 py-1.5 text-xs text-gray-500 dark:text-gray-400 text-right hidden md:table-cell">
+                            {{ number_format($row->total_modal_final ?? 0, 0, ',', '.') }}
+                        </td>
+                        <td class="px-2 py-1.5 text-xs text-gray-500 dark:text-gray-400 text-right hidden lg:table-cell">
+                            {{ (isset($isPedagangProductMode) && $isPedagangProductMode) ? '-' : number_format($row->total_kas ?? 0, 0, ',', '.') }}
+                        </td>
+                        <td class="px-2 py-1.5 text-xs text-gray-500 dark:text-gray-400 text-right hidden lg:table-cell">
+                            {{ (isset($isPedagangProductMode) && $isPedagangProductMode) ? '-' : number_format($row->total_tab_final ?? 0, 0, ',', '.') }}
+                        </td>
+                        <td class="px-2 py-1.5 text-xs font-bold text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-500/10 text-right">
+                            {{ (isset($isPedagangProductMode) && $isPedagangProductMode) ? '-' : number_format($row->total_setoran ?? 0, 0, ',', '.') }}
+                        </td>
+                        <td class="px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 text-right hidden md:table-cell">
+                            {{ number_format($row->total_omset ?? 0, 0, ',', '.') }}
+                        </td>
+                        <td class="px-2 py-1.5 text-xs font-bold {{ ($row->total_laba ?? 0) >= 0 ? 'text-success-600' : 'text-danger-600' }} text-right">
+                            {{ number_format($row->total_laba ?? 0, 0, ',', '.') }}
+                        </td>
+                        @if($mode === 'tahunan' || $mode === 'nama')
+                        <td class="px-2 py-1.5 text-center">
+                            @if($mode === 'tahunan')
+                            <x-filament::icon-button wire:click="$set('month', '{{ str_pad($row->bln, 2, '0', STR_PAD_LEFT) }}'); $set('mode', 'nama')" icon="heroicon-m-eye" color="primary" tooltip="Lihat Detail Bulan" />
+                            @elseif($mode === 'nama')
+                            <x-filament::icon-button wire:click="$set('selectedDate', '{{ $row->tgl }}'); $set('mode', 'tanggal')" icon="heroicon-m-eye" color="primary" tooltip="Lihat Detail Hari" />
+                            @endif
+                        </td>
+                        @endif
+                    </tr>
                     @endforeach
                 </tbody>
-                <tfoot class="bg-gray-100 dark:bg-slate-800 font-semibold">
-                    <tr>
-                        <td class="px-3 py-2 text-sm text-gray-700 dark:text-gray-300">TOTAL</td>
-                        <td class="px-3 py-2 text-sm text-center text-gray-700 dark:text-gray-300">{{ $totals['produk'] ?? 0 }}</td>
-                        <td class="px-3 py-2 text-sm text-right text-gray-700 dark:text-gray-300">{{ $totals['titip'] ?? 0 }}</td>
-                        <td class="px-3 py-2 text-sm text-right text-gray-700 dark:text-gray-300">{{ $totals['laku'] ?? 0 }}</td>
-                        <td class="px-3 py-2 text-sm text-right text-gray-700 dark:text-gray-300 hidden md:table-cell">Rp {{ number_format($totals['modal'] ?? 0, 0, ',', '.') }}</td>
-                        <td class="px-3 py-2 text-sm text-right text-gray-700 dark:text-gray-300 hidden lg:table-cell">Rp {{ number_format($totals['kas'] ?? 0, 0, ',', '.') }}</td>
-                        <td class="px-3 py-2 text-sm text-right text-gray-700 dark:text-gray-300 hidden lg:table-cell">Rp {{ number_format($totals['tab'] ?? 0, 0, ',', '.') }}</td>
-                        <td class="px-3 py-2 text-sm text-right text-gray-700 dark:text-gray-300">Rp {{ number_format($totals['setoran'] ?? 0, 0, ',', '.') }}</td>
-                        <td class="px-3 py-2 text-sm text-right text-gray-700 dark:text-gray-300 hidden md:table-cell">Rp {{ number_format($totals['omset'] ?? 0, 0, ',', '.') }}</td>
-                        <td class="px-3 py-2 text-sm text-right text-gray-700 dark:text-gray-300">Rp {{ number_format($totals['laba'] ?? 0, 0, ',', '.') }}</td>
+                <tfoot>
+                    <tr class="bg-gray-100 dark:bg-gray-900 border-t border-gray-200 dark:border-white/10 font-bold">
+                        <td colspan="2" class="px-2 py-1.5 text-xs uppercase tracking-wider text-gray-500 text-center">Total Seluruh</td>
+                        <td class="px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 text-center">{{ number_format($totals['produk'] ?? 0, 0, ',', '.') }}</td>
+                        <td class="px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 text-center">{{ number_format($totals['titip'] ?? 0, 0, ',', '.') }}</td>
+                        <td class="px-2 py-1.5 text-xs text-success-600 text-center">{{ number_format($totals['laku'] ?? 0, 0, ',', '.') }}</td>
+                        <td class="px-2 py-1.5 text-xs text-center" style="background: hsla({{ min($globalPerc * 1.4, 120) }}, 80%, 45%, 0.1); color: hsl({{ min($globalPerc * 1.4, 120) }}, 80%, 45%);">
+                            {{ $globalPerc }}%
+                        </td>
+                        <td class="px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 text-right hidden md:table-cell">{{ number_format($totals['modal'] ?? 0, 0, ',', '.') }}</td>
+                        <td class="px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 text-right hidden lg:table-cell">{{ number_format($totals['kas'] ?? 0, 0, ',', '.') }}</td>
+                        <td class="px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 text-right hidden lg:table-cell">{{ number_format($totals['tab'] ?? 0, 0, ',', '.') }}</td>
+                        <td class="px-2 py-1.5 text-xs text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-primary-500/10 text-right">{{ number_format($totals['setoran'] ?? 0, 0, ',', '.') }}</td>
+                        <td class="px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300 text-right hidden md:table-cell">{{ number_format($totals['omset'] ?? 0, 0, ',', '.') }}</td>
+                        <td class="px-2 py-1.5 text-xs text-success-600 text-right">{{ number_format($totals['laba'] ?? 0, 0, ',', '.') }}</td>
+                        @if($mode === 'tahunan' || $mode === 'nama')
+                        <td></td>
+                        @endif
                     </tr>
                 </tfoot>
             </table>
         </div>
-    @else
-        <div class="text-center py-12 text-gray-500 dark:text-gray-400">
-            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <p class="mt-4 text-lg font-medium">Tidak ada data untuk periode ini</p>
-            <p class="text-sm mt-1">Coba ubah filter atau pilih tanggal lain</p>
+        @else
+        <div class="p-8 text-center text-gray-500 dark:text-gray-400">
+            <x-filament::icon icon="heroicon-o-document-magnifying-glass" class="mx-auto h-12 w-12 text-gray-300 dark:text-gray-600 mb-3" />
+            <p class="text-lg font-medium">Hening...</p>
+            <p class="text-sm">Data tidak ditemukan di semesta ini.</p>
         </div>
-    @endif
+        @endif
+    </x-filament::section>
 </div>
+
+<script>
+    function merchantSales() {
+        return {
+            searchQuery: '',
+            
+            filterTable() {
+                const query = this.searchQuery.toLowerCase();
+                const rows = document.querySelectorAll('.report-row');
+                let visibleNo = 1;
+                
+                rows.forEach(row => {
+                    const name = row.dataset.name || '';
+                    if (name.includes(query)) {
+                        row.style.display = '';
+                        row.querySelector('td:first-child').textContent = visibleNo++;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+            }
+        };
+    }
+</script>

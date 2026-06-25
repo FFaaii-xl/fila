@@ -10,6 +10,10 @@ use Illuminate\Support\Facades\Auth;
 
 class CatatanSetoranPage extends Page
 {
+    protected static string | \BackedEnum | null $navigationIcon = 'heroicon-o-calendar';
+    protected static string | \UnitEnum | null $navigationGroup = 'Operasional';
+    protected static ?int $navigationSort = 10;
+    
     public ?int $selectedYear = null;
     public ?int $selectedMonth = null;
     public ?int $selectedPedagangId = null;

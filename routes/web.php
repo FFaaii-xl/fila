@@ -53,4 +53,8 @@ Route::middleware(['web', 'auth'])->group(function () {
     Route::post('/admin/tabungan/finalize', [\App\Http\Controllers\Admin\TabunganController::class, 'finalize'])->name('admin.tabungan.finalize');
     Route::post('/admin/tabungan/preview-finalize', [\App\Http\Controllers\Admin\TabunganController::class, 'previewFinalize'])->name('admin.tabungan.preview-finalize');
     Route::get('/admin/tabungan/export', [\App\Http\Controllers\Admin\TabunganController::class, 'exportExcel'])->name('admin.tabungan.export');
+
+    // Setoran AJAX endpoints
+    Route::post('/admin/setoran/toggle', [\App\Http\Controllers\Admin\SetoranController::class, 'toggle'])->name('admin.setoran.toggle');
+    Route::get('/admin/setoran/amount', [\App\Http\Controllers\Admin\SetoranController::class, 'amount'])->name('admin.setoran.amount');
 });

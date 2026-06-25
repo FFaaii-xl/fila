@@ -5,12 +5,12 @@ namespace App\Providers\Filament;
 use Filament\Panel;
 use Filament\PanelProvider;
 use App\Filament\Pages\Dashboard;
-use App\Filament\Pages\TestDashboard;
 use App\Filament\Pages\Login;
 use App\Filament\Pages\MerchantSalesPage;
 use App\Filament\Pages\ProducerSalesPage;
 use App\Filament\Pages\MutasiHarianPage;
 use App\Filament\Pages\CatatanSetoranPage;
+use App\Filament\Pages\Admin\LaporanPage;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -31,6 +31,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Dashboard::class,
+                LaporanPage::class,
             ])
             ->widgets([
                 // \Filament\Widgets\AccountWidget::class,

@@ -440,6 +440,97 @@ body.bg-gradient {
 }
 
 /* =============================================
+   Report Page Specific Utilities
+   ============================================= */
+
+/* Horizontal scrollable stats cards */
+.stats-scroll {
+    display: flex;
+    overflow-x: auto;
+    gap: 0.75rem;
+    padding-bottom: 1rem;
+}
+
+.stats-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.stats-scroll {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.stats-card {
+    flex-shrink: 0;
+    min-width: 140px;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+}
+
+.stats-card.snap-start {
+    scroll-snap-align: start;
+}
+
+/* Mobile card view for reports */
+@media (max-width: 768px) {
+    .mobile-card-view {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    
+    .mobile-card-view .report-card {
+        background: var(--card-bg);
+        border-radius: 0.75rem;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+    }
+}
+
+/* Stat card color variants */
+.stat-emerald { background: #ecfdf5; }
+.stat-emerald .stat-label { color: #059669; }
+.stat-emerald .stat-value { color: #065f46; }
+html.dark .stat-emerald { background: rgba(16, 185, 129, 0.1); }
+html.dark .stat-emerald .stat-label { color: #34d399; }
+html.dark .stat-emerald .stat-value { color: #6ee7b7; }
+
+.stat-blue { background: #eff6ff; }
+.stat-blue .stat-label { color: #2563eb; }
+.stat-blue .stat-value { color: #1e40af; }
+html.dark .stat-blue { background: rgba(59, 130, 246, 0.1); }
+html.dark .stat-blue .stat-label { color: #60a5fa; }
+html.dark .stat-blue .stat-value { color: #93c5fd; }
+
+.stat-amber { background: #fffbeb; }
+.stat-amber .stat-label { color: #d97706; }
+.stat-amber .stat-value { color: #92400e; }
+html.dark .stat-amber { background: rgba(245, 158, 11, 0.1); }
+html.dark .stat-amber .stat-label { color: #fbbf24; }
+html.dark .stat-amber .stat-value { color: #fcd34d; }
+
+.stat-rose { background: #fff1f2; }
+.stat-rose .stat-label { color: #e11d48; }
+.stat-rose .stat-value { color: #9f1239; }
+html.dark .stat-rose { background: rgba(244, 63, 94, 0.1); }
+html.dark .stat-rose .stat-label { color: #fb7185; }
+html.dark .stat-rose .stat-value { color: #fda4af; }
+
+.stat-purple { background: #faf5ff; }
+.stat-purple .stat-label { color: #9333ea; }
+.stat-purple .stat-value { color: #581c87; }
+html.dark .stat-purple { background: rgba(168, 85, 247, 0.1); }
+html.dark .stat-purple .stat-label { color: #c084fc; }
+html.dark .stat-purple .stat-value { color: #e9d5ff; }
+
+.stat-teal { background: #f0fdfa; }
+.stat-teal .stat-label { color: #0d9488; }
+.stat-teal .stat-value { color: #115e59; }
+html.dark .stat-teal { background: rgba(20, 184, 166, 0.1); }
+html.dark .stat-teal .stat-label { color: #2dd4bf; }
+html.dark .stat-teal .stat-value { color: #5eead4; }
+
+/* =============================================
    Utility Classes
    ============================================= */
 

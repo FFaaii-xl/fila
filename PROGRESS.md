@@ -101,8 +101,8 @@ Citroroso v3 adalah project manajemen pasar dengan Laravel 13 + Filament 5.6.7. 
 - **Reference**: `.clinerules` for full UI/UX guidelines
 
 ## 🔗 Reference Project
-- **Project Lama**: `D:\laragon\www\moons` (MoonShine v2)
-- **Project Baru**: `D:\laragon\www\fila` (Filament v3)
+- **Project Lama**: `D:\laragon\www\moons` (MoonShine v4)
+- **Project Baru**: `D:\laragon\www\fila` (Filament v5)
 
 ## 📌 Current Phase
 **Admin Dashboard** - Fitting to match MoonShine v2 dashboard functionality at `D:\laragon\www\moons`

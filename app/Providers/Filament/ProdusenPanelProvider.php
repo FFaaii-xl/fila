@@ -6,6 +6,7 @@ use Filament\Panel;
 use Filament\PanelProvider;
 use App\Filament\Pages\Dashboard;
 use App\Filament\Pages\Login;
+use App\Filament\Pages\Produsen\LaporanPage;
 use Hammadzafar05\MobileBottomNav\MobileBottomNav;
 use Hammadzafar05\MobileBottomNav\MobileBottomNavItem;
 
@@ -24,6 +25,7 @@ class ProdusenPanelProvider extends PanelProvider
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->pages([
                 Dashboard::class,
+                LaporanPage::class,
             ])
             ->plugin(
                 MobileBottomNav::make()
@@ -33,10 +35,10 @@ class ProdusenPanelProvider extends PanelProvider
                             ->url(fn () => '/produsen')
                             ->icon('heroicon-o-home')
                             ->sort(1),
-                        MobileBottomNavItem::make('Produk')
-                            ->label('Produk')
-                            ->url(fn () => '/produsen/produk')
-                            ->icon('heroicon-o-archive-box')
+                        MobileBottomNavItem::make('Laporan')
+                            ->label('Laporan')
+                            ->url(fn () => '/produsen/laporan')
+                            ->icon('heroicon-o-document-chart-bar')
                             ->sort(2),
                         MobileBottomNavItem::make('Riwayat')
                             ->label('Riwayat')
